@@ -42,9 +42,12 @@ export function observeAcceptedSubmissions(
     activeSubmissionId = submissionId;
     resultObserver?.disconnect();
 
+    // Do not mistake a result panel from the previous submission for this one.
+    const previousResultNode = document.querySelector(RESULT_SELECTOR);
+
     const checkResult = (): void => {
       const result = document.querySelector<HTMLElement>(RESULT_SELECTOR);
-      if (result?.textContent?.trim() !== "Accepted") {
+      if (!result || result === previousResultNode || result.textContent?.trim() !== "Accepted") {
         return;
       }
 
@@ -68,7 +71,6 @@ export function observeAcceptedSubmissions(
     };
 
     // The URL can update before React renders the new submission result.
-    checkResult();
     resultObserver = new MutationObserver(checkResult);
     resultObserver.observe(document.body, {
       childList: true,
