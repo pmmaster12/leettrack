@@ -157,15 +157,21 @@ export async function openAcceptedRemarkModal(
   save.type = "button";
   const status = createElement("div", "status");
 
-  const closeModal = (): void => host.remove();
+  const onDocumentKeydown = (event: KeyboardEvent): void => {
+    if (event.key === "Escape") closeModal();
+  };
+
+  const closeModal = (): void => {
+    document.removeEventListener("keydown", onDocumentKeydown);
+    host.remove();
+  };
+
   close.addEventListener("click", closeModal);
   cancel.addEventListener("click", closeModal);
   backdrop.addEventListener("click", (event) => {
     if (event.target === backdrop) closeModal();
   });
-  shadow.addEventListener("keydown", (event: KeyboardEvent) => {
-    if (event.key === "Escape") closeModal();
-  });
+  document.addEventListener("keydown", onDocumentKeydown);
 
   save.addEventListener("click", async () => {
     const remark = textarea.value.trim();
