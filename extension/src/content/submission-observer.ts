@@ -9,16 +9,39 @@ export interface AcceptedSubmission {
 const SUBMISSION_PATH = /^\/problems\/([^/]+)\/submissions\/(\d+)\/?$/;
 const RESULT_SELECTOR = '[data-e2e-locator="submission-result"]';
 
+function fallbackProblemMetadata(
+  problemSlug: string,
+  currentUrl: URL,
+): LeetCodeProblemMetadata {
+  const titleFromHeading =
+    document.querySelector("h1")?.textContent?.trim() ||
+    document.title.replace(/\s*[-|]\s*LeetCode.*$/i, "").trim();
+
+  const title =
+    titleFromHeading ||
+    problemSlug
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+
+  return {
+    title,
+    problemUrl: `${currentUrl.origin}/problems/${problemSlug}/`,
+    // The submission details page often omits difficulty and topic metadata.
+    // Keep the modal usable and let the user add topics manually.
+    difficulty: "Unknown" as LeetCodeProblemMetadata["difficulty"],
+    topics: [],
+  };
+}
+
 /**
- * Watches LeetCode's SPA URL and result panel for newly completed submissions.
- * A submission URL contains a unique ID, so repeated submissions of the same
- * problem are treated as separate events.
+ * Watches LeetCode's submission URL and result panel. The submission ID in
+ * the URL is the primary identity and deduplication key.
  */
 export function observeAcceptedSubmissions(
   onAccepted: (submission: AcceptedSubmission) => void,
 ): () => void {
   let lastUrl = window.location.href;
-  let lastKnownResultNode = document.querySelector(RESULT_SELECTOR);
   let activeSubmissionId: string | null = null;
   let resultObserver: MutationObserver | null = null;
   const reportedSubmissionIds = new Set<string>();
@@ -35,67 +58,62 @@ export function observeAcceptedSubmissions(
     }
 
     const [, problemSlug, submissionId] = match;
-
-    if (submissionId === activeSubmissionId) {
+    if (submissionId === activeSubmissionId || reportedSubmissionIds.has(submissionId)) {
       return;
     }
 
     activeSubmissionId = submissionId;
     resultObserver?.disconnect();
 
-    // Compare against the result node observed before navigation. The new
-    // panel may already be rendered by the time our URL poll notices navigation.
-    const previousResultNode = lastKnownResultNode;
-
     const checkResult = (): void => {
       const result = document.querySelector<HTMLElement>(RESULT_SELECTOR);
-      if (!result || result === previousResultNode || result.textContent?.trim() !== "Accepted") {
+      if (result?.textContent?.trim() !== "Accepted") {
         return;
       }
 
       if (reportedSubmissionIds.has(submissionId)) {
+        resultObserver?.disconnect();
+        resultObserver = null;
         return;
       }
 
-      const problem = extractLeetCodeProblem();
-      if (!problem || !problem.problemUrl.endsWith(`/problems/${problemSlug}/`)) {
-        return;
-      }
+      const problem =
+        extractLeetCodeProblem() ?? fallbackProblemMetadata(problemSlug, url);
 
       reportedSubmissionIds.add(submissionId);
+      console.info("[LeetTrack] Accepted result matched submission URL:", submissionId);
       onAccepted({
         submissionId,
         submissionUrl: url.href,
         problem,
       });
+
       resultObserver?.disconnect();
       resultObserver = null;
     };
 
-    // The URL can update before React renders the new submission result.
-    resultObserver = new MutationObserver(checkResult);
-    resultObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
+    // On a full page load, the result may already be present. On SPA navigation,
+    // the observer waits until LeetCode renders the result for the new ID.
+    checkResult();
+    if (!reportedSubmissionIds.has(submissionId)) {
+      resultObserver = new MutationObserver(checkResult);
+      resultObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
   };
 
   const pollForNavigation = (): void => {
     const currentUrl = window.location.href;
-    if (currentUrl === lastUrl) {
-      lastKnownResultNode = document.querySelector(RESULT_SELECTOR);
-      return;
-    }
+    if (currentUrl === lastUrl) return;
 
     lastUrl = currentUrl;
     inspectCurrentSubmission();
-    lastKnownResultNode = document.querySelector(RESULT_SELECTOR);
   };
 
-  const intervalId = window.setInterval(pollForNavigation, 400);
-
-  // Handle a submission page that was opened directly or refreshed.
+  const intervalId = window.setInterval(pollForNavigation, 300);
   inspectCurrentSubmission();
 
   return () => {
