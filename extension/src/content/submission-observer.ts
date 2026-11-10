@@ -11,6 +11,29 @@ const RESULT_SELECTOR = '[data-e2e-locator="submission-result"]';
 const PROCESSED_SUBMISSIONS_KEY = "leettrack.processedSubmissionIds";
 const PROBLEM_RECORDS_KEY = "leettrack.problemRecords";
 
+const CAPTURE_ENABLED_AT_KEY = "leettrack.captureEnabledAt";
+
+async function getCaptureEnabledAt(): Promise<number> {
+  const stored = await chrome.storage.local.get(CAPTURE_ENABLED_AT_KEY);
+  const existing = stored[CAPTURE_ENABLED_AT_KEY];
+  if (typeof existing === "number") return existing;
+
+  const initializedAt = Date.now();
+  await chrome.storage.local.set({ [CAPTURE_ENABLED_AT_KEY]: initializedAt });
+  return initializedAt;
+}
+
+function extractSubmissionTimestamp(): number | null {
+  const pageText = document.body.innerText;
+  const match = pageText.match(
+    /submitted at\\s+([A-Za-z]{3,9}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2})/i,
+  );
+  if (!match) return null;
+
+  const timestamp = Date.parse(match[1]);
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
 function fallbackProblemMetadata(
   problemSlug: string,
   currentUrl: URL,
@@ -78,6 +101,40 @@ export function observeAcceptedSubmissions(
       if (!result) return;
       const resultText = result.textContent?.trim() ?? "";
       if (resultText !== "Accepted") return;
+
+      // Only auto-capture submissions made after LeetTrack was first enabled.
+      // Older Accepted submissions remain available through the manual button.
+      try {
+        const [captureEnabledAt, submissionTimestamp] = await Promise.all([
+          getCaptureEnabledAt(),
+          Promise.resolve(extractSubmissionTimestamp()),
+        ]);
+
+        if (submissionTimestamp === null) {
+          console.info(
+            "[LeetTrack] Could not read submission date; use manual capture if needed.",
+          );
+          resultObserver?.disconnect();
+          resultObserver = null;
+          return;
+        }
+
+        if (submissionTimestamp < captureEnabledAt) {
+          console.info(
+            "[LeetTrack] Historical submission; automatic capture skipped:",
+            submissionId,
+          );
+          reportedSubmissionIds.add(submissionId);
+          resultObserver?.disconnect();
+          resultObserver = null;
+          return;
+        }
+      } catch (error) {
+        console.warn("[LeetTrack] Could not check capture start date:", error);
+        resultObserver?.disconnect();
+        resultObserver = null;
+        return;
+      }
 
       // Ignore the old result panel until LeetCode replaces it or changes its
       // content for the submission now present in the URL. Full page loads have
