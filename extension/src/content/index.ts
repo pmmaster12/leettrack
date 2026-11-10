@@ -5,6 +5,7 @@
 
 import { extractLeetCodeProblem } from "./leetcode-adapter";
 import { observeAcceptedSubmissions } from "./submission-observer";
+import { openAcceptedRemarkModal } from "./remark-modal";
 
 const LEETTRACK_MARKER = "[LeetTrack]";
 
@@ -24,6 +25,7 @@ logCurrentProblem();
 
 const stopObservingSubmissions = observeAcceptedSubmissions((submission) => {
   console.info(`${LEETTRACK_MARKER} Newly accepted submission detected:`, submission);
+  void openAcceptedRemarkModal(submission);
 });
 
 // Keep the observer lifecycle explicit for future SPA/navigation cleanup.
