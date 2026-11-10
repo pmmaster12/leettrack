@@ -8,3 +8,5 @@ coverage/
 __pycache__/
 .pytest_cache/
 .venv/
+leettrack-0.2.0-draft.zip
+leettrack-0.2.0-production.zip
