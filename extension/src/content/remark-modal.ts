@@ -78,7 +78,7 @@ export async function openAcceptedRemarkModal(
   const header = createElement("div", "top");
   const heading = createElement("div");
   heading.append(
-    createElement("div", "eyebrow", "Accepted submission"),
+    createElement("div", "eyebrow", submission.submissionId.startsWith("manual-") ? "Manual capture" : "Accepted submission"),
     Object.assign(createElement("h2"), { id: "leettrack-title", textContent: submission.problem.title }),
     createElement("p", "subtitle", submission.problem.difficulty),
   );
