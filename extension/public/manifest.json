@@ -28,5 +28,11 @@
   ],
   "host_permissions": [
     "https://sheets.googleapis.com/*"
-  ]
+  ],
+  "oauth2": {
+    "client_id": "1098644967878-neug0kkfrs9rin9emkef08d8vko9pdni.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/spreadsheets"
+    ]
+  }
 }
