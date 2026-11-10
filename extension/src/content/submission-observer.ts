@@ -47,6 +47,8 @@ export function observeAcceptedSubmissions(
   let resultObserver: MutationObserver | null = null;
   const reportedSubmissionIds = new Set<string>();
   const checkingSubmissionIds = new Set<string>();
+  // LeetCode may retain the previous Accepted panel briefly during SPA navigation.
+  let navigationBaseline: { node: HTMLElement | null; text: string } | null = null;
 
   const inspectCurrentSubmission = (): void => {
     const url = new URL(window.location.href);
@@ -73,7 +75,20 @@ export function observeAcceptedSubmissions(
 
     const checkResult = async (): Promise<void> => {
       const result = document.querySelector<HTMLElement>(RESULT_SELECTOR);
-      if (result?.textContent?.trim() !== "Accepted") return;
+      if (!result) return;
+      const resultText = result.textContent?.trim() ?? "";
+      if (resultText !== "Accepted") return;
+
+      // Ignore the old result panel until LeetCode replaces it or changes its
+      // content for the submission now present in the URL. Full page loads have
+      // no baseline, so an already-rendered Accepted result is still detected.
+      if (
+        navigationBaseline &&
+        result === navigationBaseline.node &&
+        resultText === navigationBaseline.text
+      ) {
+        return;
+      }
 
       if (
         reportedSubmissionIds.has(submissionId) ||
@@ -151,6 +166,11 @@ export function observeAcceptedSubmissions(
     if (currentUrl === lastUrl) return;
 
     lastUrl = currentUrl;
+    const previousResult = document.querySelector<HTMLElement>(RESULT_SELECTOR);
+    navigationBaseline = {
+      node: previousResult,
+      text: previousResult?.textContent?.trim() ?? "",
+    };
     inspectCurrentSubmission();
   };
 
