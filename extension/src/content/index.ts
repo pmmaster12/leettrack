@@ -6,6 +6,7 @@
 import { extractLeetCodeProblem } from "./leetcode-adapter";
 import { observeAcceptedSubmissions } from "./submission-observer";
 import { openAcceptedRemarkModal } from "./remark-modal";
+import { mountManualCaptureButton } from "./manual-trigger";
 
 const LEETTRACK_MARKER = "[LeetTrack]";
 
@@ -28,8 +29,19 @@ const stopObservingSubmissions = observeAcceptedSubmissions((submission) => {
   void openAcceptedRemarkModal(submission);
 });
 
-// Keep the observer lifecycle explicit for future SPA/navigation cleanup.
-window.addEventListener("pagehide", stopObservingSubmissions, { once: true });
+const stopManualCapture = mountManualCaptureButton((submission) => {
+  console.info(`${LEETTRACK_MARKER} Manual problem capture requested:`, submission);
+  void openAcceptedRemarkModal(submission);
+});
+
+window.addEventListener(
+  "pagehide",
+  () => {
+    stopObservingSubmissions();
+    stopManualCapture();
+  },
+  { once: true },
+);
 
 chrome.runtime.sendMessage({ type: "LEETTRACK_PING" }, (response) => {
   if (chrome.runtime.lastError) {
