@@ -17,6 +17,7 @@ interface LocalProblemRecord {
 }
 
 const STORAGE_KEY = "leettrack.problemRecords";
+const PROCESSED_SUBMISSIONS_KEY = "leettrack.processedSubmissionIds";
 const HOST_ID = "leettrack-modal-host";
 
 function createElement<K extends keyof HTMLElementTagNameMap>(
@@ -43,17 +44,8 @@ export async function openAcceptedRemarkModal(
   style.textContent = `
     :host { all: initial; }
     * { box-sizing: border-box; }
-    .backdrop {
-      position: fixed; inset: 0; z-index: 2147483647;
-      display: grid; place-items: center; padding: 20px;
-      background: rgba(15, 23, 42, .58);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    .modal {
-      width: min(520px, 100%); max-height: min(760px, 92vh); overflow: auto;
-      padding: 24px; border: 1px solid #e2e8f0; border-radius: 18px;
-      background: #fff; color: #0f172a; box-shadow: 0 24px 80px rgba(0,0,0,.28);
-    }
+    .backdrop { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 20px; background: rgba(15, 23, 42, .58); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .modal { width: min(520px, 100%); max-height: min(760px, 92vh); overflow: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 18px; background: #fff; color: #0f172a; box-shadow: 0 24px 80px rgba(0,0,0,.28); }
     .top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
     .eyebrow { color:#64748b; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
     h2 { margin:6px 0 4px; font-size:21px; line-height:1.3; font-weight:750; }
@@ -185,14 +177,27 @@ export async function openAcceptedRemarkModal(
     status.textContent = "Saving locally…";
 
     try {
-      const stored = await chrome.storage.local.get(STORAGE_KEY);
+      const stored = await chrome.storage.local.get([
+        STORAGE_KEY,
+        PROCESSED_SUBMISSIONS_KEY,
+      ]);
       const records = (stored[STORAGE_KEY] ?? {}) as Record<string, LocalProblemRecord>;
+      const processedIds = (stored[PROCESSED_SUBMISSIONS_KEY] ?? []) as string[];
       const key = submission.problem.problemUrl;
       const existing = records[key];
-      const now = new Date().toISOString();
 
-      // Preserve topics from earlier revisions and add any newly selected
-      // topics. Keying by slug prevents duplicate tags across submissions.
+      // Guard against a duplicate save if the same submission modal is opened twice.
+      if (
+        processedIds.includes(submission.submissionId) ||
+        existing?.remarks.some((item) => item.submissionId === submission.submissionId)
+      ) {
+        status.textContent = "This submission has already been saved.";
+        save.textContent = "Already saved";
+        window.setTimeout(closeModal, 1100);
+        return;
+      }
+
+      const now = new Date().toISOString();
       const mergedTopics = new Map(
         (existing?.topics ?? []).map((topic) => [topic.slug, topic]),
       );
@@ -210,7 +215,10 @@ export async function openAcceptedRemarkModal(
         ],
       };
 
-      await chrome.storage.local.set({ [STORAGE_KEY]: records });
+      await chrome.storage.local.set({
+        [STORAGE_KEY]: records,
+        [PROCESSED_SUBMISSIONS_KEY]: [...new Set([...processedIds, submission.submissionId])],
+      });
       status.textContent = "Saved on this browser. Google Sheets sync comes next.";
       save.textContent = "Saved";
       window.setTimeout(closeModal, 1100);
