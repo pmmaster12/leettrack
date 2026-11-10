@@ -54,6 +54,20 @@ export default function App() {
     }
   };
 
+  const syncNow = () => {
+    setMessage('Syncing saved problems to Google Sheets…');
+    chrome.runtime.sendMessage({ type: 'LEETTRACK_SYNC_ALL' }, (response) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+      setMessage(response?.ok
+        ? `Sync complete: ${response.synced} problem record(s) uploaded.`
+        : response?.error ?? 'Sync failed. Please try again.');
+    });
+  };
+
   const connectGoogle = () => {
     setMessage('Opening Google sign-in…');
     chrome.identity.getAuthToken({ interactive: true }, (token) => {
@@ -112,6 +126,9 @@ export default function App() {
         </button>
         <button className="primary-button" onClick={connectGoogle}>
           {connection === 'connected' ? 'Reconnect Google account' : 'Connect Google account'}
+        </button>
+        <button className="secondary-button" onClick={syncNow} disabled={connection !== 'connected'}>
+          Sync saved problems now
         </button>
         {message && <p className="message" role="status">{message}</p>}
       </section>
