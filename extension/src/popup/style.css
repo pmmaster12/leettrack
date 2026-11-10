@@ -5,21 +5,29 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
-
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 340px; }
+body { margin: 0; min-width: 360px; }
 .app-shell { padding: 20px; }
-.header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: #8b5cf6; color: white; font-size: 20px; font-weight: 800; }
 h1, h2, p { margin: 0; }
 h1 { font-size: 18px; letter-spacing: -0.3px; }
 .subtitle { margin-top: 3px; color: #969baa; font-size: 12px; }
-.status-card { display: flex; gap: 11px; padding: 14px; border: 1px solid #2a2e38; border-radius: 13px; background: #191c24; }
+.status-card { display: flex; gap: 11px; padding: 13px; border: 1px solid #2a2e38; border-radius: 13px; background: #191c24; }
 .status-dot { flex: 0 0 auto; width: 9px; height: 9px; margin-top: 4px; border-radius: 50%; background: #eab308; }
 .status-dot.is-ready { background: #22c55e; box-shadow: 0 0 0 4px #22c55e1c; }
 .status-card strong { font-size: 12px; }
-.status-card p, .next-card p { margin-top: 5px; color: #a2a8b6; font-size: 11px; line-height: 1.55; }
-.next-card { margin-top: 13px; padding: 15px; border-radius: 13px; background: #211c31; }
+.status-card p { margin-top: 5px; color: #a2a8b6; font-size: 11px; line-height: 1.5; }
+.settings-card { margin-top: 13px; padding: 16px; border: 1px solid #2a2e38; border-radius: 13px; background: #191c24; }
 .eyebrow { color: #b69afc !important; font-size: 9px !important; font-weight: 800; letter-spacing: 1px; }
-h2 { margin-top: 7px; font-size: 14px; }
-footer { margin-top: 19px; color: #777e8c; font-size: 10px; text-align: center; }
+h2 { margin: 7px 0 15px; font-size: 14px; }
+label { display: block; margin: 12px 0 6px; color: #c8cbd4; font-size: 11px; font-weight: 650; }
+input { width: 100%; padding: 10px; border: 1px solid #343947; border-radius: 8px; outline: none; background: #111318; color: #e8eaf0; font: inherit; font-size: 11px; }
+input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px #8b5cf622; }
+input::placeholder { color: #686f7d; }
+button { width: 100%; margin-top: 11px; padding: 10px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: .6; cursor: wait; }
+.primary-button { border: 1px solid #8b5cf6; background: #8b5cf6; color: white; }
+.secondary-button { border: 1px solid #414656; background: #242834; color: #e8eaf0; }
+.message { margin-top: 11px; color: #b9a6ff; font-size: 11px; line-height: 1.5; }
+footer { margin-top: 16px; color: #777e8c; font-size: 10px; line-height: 1.5; text-align: center; }
