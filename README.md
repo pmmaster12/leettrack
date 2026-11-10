@@ -1,74 +1,72 @@
-# LeetTrack
+# LeetTrack — DSA Revision Tracker
 
-**A lightweight Chrome extension for capturing LeetCode solutions and building a personal DSA revision log in Google Sheets.**
+**A Chrome extension that turns accepted LeetCode submissions into a personal, searchable revision log in Google Sheets.**
 
-LeetTrack detects accepted submissions, lets you record what you learned, and keeps revision notes attached to each problem. You can also capture a problem manually and choose which Google Sheets tab should store it.
+LeetCode already shows which problems you have solved. What it does not capture is *why you struggled, what you learned, what you would do differently, and what you need to remember when you revisit a problem.*
 
-> **Release status:** Feature-complete beta. The development build has been tested locally. A production Google OAuth client and Chrome Web Store review are still required before public release.
+That is the problem LeetTrack solves.
 
-## Features
+When a submission is accepted, LeetTrack detects the result and opens a small note-taking dialog. Record your approach, mistake, key insight, or follow-up task. LeetTrack keeps those notes with the problem, appends a dated entry when you revisit it, and syncs the record to a Google Sheets tab you choose. You can also capture a problem manually without submitting a solution.
 
-- **Automatic capture:** Detects an Accepted submission on a LeetCode problem submission page.
-- **Manual capture:** Use the floating **Save to LeetTrack** control on a problem page.
-- **Revision history:** Keep one record per problem and append dated notes for later attempts.
-- **Problem metadata:** Capture the problem title, canonical URL, difficulty, and LeetCode topics.
-- **Editable topics:** Add or remove topic tags before saving. Tags are merged into the problem's topic history.
-- **Per-problem sheet assignment:** Choose an existing Google Sheets tab when saving a new problem. Revisions stay in the problem's assigned tab.
-- **Duplicate protection:** Reopening the same submission does not create another revision.
-- **Local-first capture:** Notes are saved in Chrome local storage before Google Sheets sync is attempted.
-- **No hosted backend:** The extension communicates directly with Google Sheets using Chrome Identity and the Sheets API.
+LeetTrack is designed to complement LeetCode, not replace its progress statistics or problem-solving interface.
+
+## At a glance
+
+- **Capture:** Automatically detect newly Accepted submissions or save a problem manually.
+- **Remember:** Keep dated revision notes attached to one problem record.
+- **Organize:** Capture difficulty and topics, edit topic labels, and assign each new problem to an existing spreadsheet tab.
+- **Own your data:** Save locally in Chrome and sync directly to your Google Sheet.
+- **No LeetTrack server:** No hosted application backend or LeetTrack account is required.
 
 ## How it works
 
-1. Solve a problem on [LeetCode](https://leetcode.com/).
-2. After an Accepted submission, LeetTrack opens an inline remark dialog. Or use **Save to LeetTrack** to capture a problem manually.
-3. Add your learning, mistake, or revision note.
-4. Select the destination tab in **Save to sheet**.
-5. Save. LeetTrack stores the record locally and syncs it to the selected Google Sheets tab.
-6. When you solve the same problem again, the new dated remark is appended to the existing row in that tab.
+1. Open a problem on [LeetCode](https://leetcode.com/) and solve it.
+2. After an Accepted submission, LeetTrack detects the submission and opens its note dialog. Alternatively, use the **Save to LeetTrack** button on a problem page.
+3. Add a note about your approach, mistake, insight, complexity, or what to review later.
+4. Review or edit the extracted topics and choose a destination tab for a new problem.
+5. Save. The record is stored in Chrome and a sync to your configured Google Sheet is attempted.
+6. When you revisit the same problem and submit again, LeetTrack appends a dated revision note to that problem's existing record. It does not create a second problem row.
 
-Each problem is assigned to one sheet tab when it is first saved. Revisions keep that assignment. Existing records created before per-problem assignment are treated as belonging to the `LeetTrack` tab.
+## What gets recorded
 
-## Google Sheets format
+Each problem is represented by one record, identified by its canonical LeetCode problem URL.
 
-LeetTrack creates the following header row in a blank destination tab:
-
-| Column | Description |
+| Field | What it contains |
 | --- | --- |
 | Problem | Problem title |
-| Problem URL | Canonical LeetCode problem URL; used as the unique key |
-| Difficulty | Easy, Medium, Hard, or the available page value |
+| Problem URL | Canonical LeetCode URL; used to match the problem row |
+| Difficulty | Captured difficulty, when available |
 | Remark | Dated revision notes, appended over time |
 | Date | Original solve date |
-| Topics | Comma-separated topic labels |
+| Topics | Aggregated topic labels |
 
-Create the spreadsheet tabs you want to use before saving problems. The tab dropdown is populated from the spreadsheet's existing tabs. A blank tab is initialized with the expected headers on its first sync.
+A blank destination tab is initialized with these six column headers on its first sync. The destination tab must already exist in the spreadsheet.
 
-## Installation
+### Revision and organization rules
 
-### Requirements
+- Each accepted submission ID is processed at most once, preventing the same submission from creating duplicate notes.
+- Later notes are appended; earlier notes and the original solve date are preserved.
+- Topic labels are merged across revisions by topic slug.
+- A new problem can be assigned to any existing tab listed in the configured spreadsheet.
+- Once assigned, a problem's revisions remain in that tab. Moving an existing problem to another tab is not currently supported.
+- Older records without a saved tab assignment use the `LeetTrack` tab.
 
-- Google Chrome (Manifest V3 support)
+## Setup
+
+### What you need
+
+- Google Chrome with Manifest V3 support
 - A Google account
-- A Google spreadsheet you can edit
-- Node.js and npm (for building from source)
+- A Google spreadsheet that you own or have permission to edit
+- Node.js and npm (only if building from source)
 
-### Configure Google Cloud for a development build
+### Install from the Chrome Web Store
 
-LeetTrack uses Google OAuth through the Chrome Identity API and the Google Sheets API.
+The public listing is currently **pending review**. Once approved and published, this section will link to the store listing.
 
-1. Create or select a project in [Google Cloud Console](https://console.cloud.google.com/).
-2. Enable **Google Sheets API**.
-3. Configure the OAuth consent screen. During development, use the appropriate testing audience and add your Google account as a test user.
-4. Create an OAuth client of type **Chrome Extension**.
-5. Use the extension ID shown on `chrome://extensions` for your unpacked extension.
-6. Set the OAuth client ID and Sheets scope in `extension/public/manifest.json`:
-   - Scope: `https://www.googleapis.com/auth/spreadsheets`
-7. Build and load the extension, then connect your Google account in the LeetTrack popup.
+### Build and load from source
 
-The OAuth client ID currently in the repository is for the maintainer's development setup. **Do not use that development OAuth client for a public Chrome Web Store release.** A production OAuth client must be configured for the final Web Store extension ID, and Google OAuth verification may be required for public use of the Sheets scope.
-
-### Build from source
+Clone the repository and build the extension:
 
 ```bash
 git clone https://github.com/pmmaster12/leettrack.git
@@ -79,77 +77,107 @@ npm run build
 
 The unpacked extension is generated in `extension/dist`.
 
-### Load the unpacked extension
-
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Click **Load unpacked**.
-4. Select the repository's `extension/dist` directory.
-5. Open the LeetTrack toolbar popup.
-6. Enter your Google spreadsheet URL and the default tab name.
-7. Click **Save settings**, connect your Google account, and authorize access.
-8. Open a LeetCode problem page and test capture.
+3. Select **Load unpacked** and choose the `extension/dist` directory.
+4. Open the LeetTrack toolbar popup.
+5. Enter the URL of your Google spreadsheet and the default tab name, then save the settings.
+6. Select **Connect Google account** and complete Google's authorization flow.
+7. Open a LeetCode problem page and try automatic or manual capture.
 
-After changing source files, run `npm run build` again and click **Reload** on the extension card.
+After changing source files, rebuild and click **Reload** on the extension card.
 
-## Development commands
+### Google Cloud and OAuth configuration
 
-Run these commands from `extension/`:
+LeetTrack uses Chrome Identity for Google authorization and the Google Sheets API for spreadsheet access. To build and run your own development copy:
+
+1. Create or select a project in [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable the **Google Sheets API**.
+3. Configure the OAuth consent screen. During development, add your Google account as a test user if the consent screen is in testing mode.
+4. Create an OAuth client with application type **Chrome Extension** and use the ID of your unpacked extension from `chrome://extensions`.
+5. Set that client ID in `extension/public/manifest.json` for your local development build.
+6. Build the extension and authorize it through the popup.
+
+The repository's source manifest is configured for the maintainer's development OAuth client. The production build command applies the production OAuth client to the generated package; do not replace your local development client with a Web Store ID.
+
+**Production packaging:** use `npm run build:prod`, not `npm run build`. The production command type-checks, builds, and writes the production OAuth client ID into `dist/manifest.json`. Verify the generated manifest before packaging. Public distribution may require Google OAuth verification for the requested Sheets scope.
+
+## Development
+
+Run commands from `extension/`.
 
 | Command | Purpose |
 | --- | --- |
 | `npm install` | Install dependencies |
-| `npm run build` | Type-check and create the production build |
+| `npm run build` | Type-check and build with the development OAuth client |
+| `npm run build:dev` | Explicit development build |
+| `npm run build:prod` | Production build with the production OAuth client |
 | `npm run typecheck` | Run TypeScript checks |
 | `npm run dev` | Run Vite in watch mode |
 
-## Permissions and data
+### Architecture
 
-LeetTrack requests the following Chrome permissions:
+LeetTrack is a Manifest V3 browser extension built with TypeScript, React, and Vite.
 
-- `storage`: save problem records, revision notes, settings, and duplicate-submission markers locally.
-- `identity`: obtain a Google OAuth access token so the extension can access the spreadsheet.
-- Google Sheets API host access: communicate with `sheets.googleapis.com`.
+- **Content scripts** run on LeetCode problem pages and coordinate capture.
+- **LeetCode adapter** reads the current problem title, canonical URL, difficulty, and available topics from the page.
+- **Submission observer** detects Accepted results and identifies submissions for duplicate protection.
+- **Capture dialog** runs inside a Shadow DOM host to isolate its UI from LeetCode's page styles. It collects remarks, topic edits, and a destination tab for new problems.
+- **Popup** stores spreadsheet settings, starts Google authorization, and offers manual synchronization.
+- **Background service worker** handles extension messages, Chrome Identity token access, spreadsheet tab discovery, and Google Sheets API reads and writes.
 
-The extension stores captured problem records and notes in Chrome's local extension storage, then writes them to the Google spreadsheet you configure. Google authorization is handled by Chrome Identity; the extension does not store the OAuth access token in its own settings. LeetTrack does not require a LeetCode password, a hosted application server, or an API key entered by the user.
+There is no hosted LeetTrack application server or database. The extension communicates with Google Sheets directly.
 
-Only connect a spreadsheet you own or are authorized to edit. Review the [privacy policy](docs/privacy-policy.md) before installing or publishing.
+## Data, permissions, and privacy
 
-## Known limitations
+LeetTrack requests these Chrome permissions:
 
-- Problem records are stored locally in the browser and synced outward to Google Sheets. LeetTrack does not currently import spreadsheet records back into a new browser profile.
-- A problem's sheet assignment is fixed after its first save. Moving an existing problem between tabs is not currently supported.
-- Existing records created before this feature default to the `LeetTrack` tab.
-- Google Sheets is not a transactional database. Concurrent edits from multiple browser profiles may cause conflicts.
-- LeetCode may change its page structure, which can affect metadata extraction or accepted-submission detection.
-- The public release requires a production OAuth configuration; the development OAuth client in this repository is not intended for public distribution.
+- **`storage`:** stores problem records, revision notes, settings, and processed-submission markers in Chrome local extension storage.
+- **`identity`:** obtains Google authorization through Chrome's identity flow.
+- **Google Sheets API host access:** reads spreadsheet metadata and reads/writes values in the configured spreadsheet.
+
+The extension extracts problem-page information from Leetcode pages where it runs. Records are stored locally first and are sent to Google Sheets when synchronization is triggered. The extension does not ask for your LeetCode password and does not operate a hosted application backend. The OAuth access token is handled through Chrome Identity and is not stored in LeetTrack's own settings.
+
+The requested Sheets scope is `https://www.googleapis.com/auth/spreadsheets`. It grants read/write access to spreadsheets available to the authorized Google account. Only connect an account and spreadsheet you are comfortable using with the extension.
+
+Read the [Privacy Policy](docs/privacy-policy.md) for details about data handling, retention, and sharing.
+
+## Current limitations
+
+- Local Chrome storage is the source used by the extension during capture. Records are synced outward to Google Sheets; records are not imported from a spreadsheet into a new browser profile.
+- Changes made directly in Google Sheets are not synchronized back into LeetTrack's local records.
+- A problem's spreadsheet tab assignment is fixed after its first save; moving it is not supported.
+- A destination tab must already exist. LeetTrack adds headers to a blank tab but does not create tabs.
+- A failed sync does not undo a local save. Use manual sync from the popup to retry.
+- Sync is not a transactional, cross-device conflict-resolution system. Simultaneous edits or syncs from multiple browser profiles can conflict.
+- LeetCode may change its page structure, which can affect metadata extraction or submission detection.
 
 ## Troubleshooting
 
-**The sheet dropdown is empty or does not load**
-- Confirm the spreadsheet URL is saved in the popup.
-- Confirm the Google account is connected and has access to the spreadsheet.
-- Confirm the Google Sheets API is enabled in the Cloud project.
-- Reconnect your Google account and reload the extension.
+**The spreadsheet tab list is empty or fails to load**
+- Check that the spreadsheet URL is saved and that the connected Google account can access it.
+- Confirm the Google Sheets API is enabled in the OAuth project's Google Cloud configuration.
+- Reconnect Google and reload the extension.
 
-**A sync reports that a tab does not exist**
-- Create the tab in Google Sheets first.
-- Refresh/reopen the remark dialog so the dropdown fetches the current tab list.
+**Sync reports that a tab does not exist**
+- Create the tab in Google Sheets first, then reopen the capture dialog to refresh the tab list.
 
-**A tab reports an invalid header**
-- Use a blank tab, or make sure its first six columns match the header row documented above.
+**A tab reports invalid headers**
+- Use a blank tab, or ensure its first six columns match the schema documented above.
 
-**A problem appears in the wrong tab**
-- Revisions use the sheet assignment saved with the problem. Existing records created before this feature default to `LeetTrack`.
+**A problem is saved to an unexpected tab**
+- Revisions use the tab assignment saved with the problem. Older records without an assignment default to `LeetTrack`.
 
-**The extension does not detect an accepted submission**
-- Confirm you are on a LeetCode problem submission page and that the submission result is Accepted.
-- Try the manual **Save to LeetTrack** control as a fallback.
+**Automatic capture does not appear**
+- Confirm the submission result is Accepted on a LeetCode problem submission page.
+- Use the manual **Save to LeetTrack** control as a fallback.
 
-## Contributing
+## Support and contributions
 
-Issues and pull requests are welcome. Please include reproduction steps, browser version, and relevant console errors when reporting a bug. Do not include OAuth access tokens, private spreadsheet contents, or personal revision notes in issue reports.
+Found a bug or have a feature request? [Open a GitHub issue](https://github.com/pmmaster12/leettrack/issues). When reporting a problem, include reproduction steps, Chrome version, and relevant console errors. Do not include OAuth tokens, private spreadsheet contents, or personal revision notes.
+
+Pull requests are welcome. Please discuss larger changes in an issue first.
 
 ## License
 
-No license has been added yet. Until a license file is included, all rights are reserved by the repository owner; do not assume the code is available for reuse under an open-source license.
+No license has been added yet. Until a license is published in this repository, the code is not granted an open-source reuse license; all rights are reserved by the repository owner.
