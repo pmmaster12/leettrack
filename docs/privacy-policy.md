@@ -35,6 +35,16 @@ LeetTrack does not independently share your revision notes with other users. Inf
 
 Local records remain in Chrome extension storage until you clear the extension's data or remove the extension. Synced records remain in your Google spreadsheet until you delete them there. Removing the extension does not automatically delete spreadsheet data.
 
+
+
+## Chrome Web Store User Data Policy — Limited Use
+
+LeetTrack's use and transfer of information received from Google APIs will adhere to the Chrome Web Store User Data Policy, including the Limited Use requirements. Google OAuth access is used only to read spreadsheet tab names and synchronize the problem records that you choose to save to your selected spreadsheet. LeetTrack does not use Google API data for advertising, creditworthiness, lending, or unrelated purposes.
+
+LeetTrack accesses only LeetCode problem pages to support its problem-capture feature. It processes the current problem URL and relevant problem-page details, and detects Accepted submission events so it can offer to save a problem. This browsing information is used only for the revision-tracking functionality described in the Chrome Web Store listing. It is not collected to build a general browsing history or used for unrelated purposes.
+
+Revision remarks and settings are user-provided content. They remain in Chrome local extension storage unless you choose to sync them to your Google spreadsheet. Google receives synced records as necessary to provide the spreadsheet synchronization feature.
+
 ## Changes to this policy
 
 This policy may be updated as the extension changes. The latest version will be published with the LeetTrack source repository.
