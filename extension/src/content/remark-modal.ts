@@ -219,8 +219,21 @@ export async function openAcceptedRemarkModal(
         [STORAGE_KEY]: records,
         [PROCESSED_SUBMISSIONS_KEY]: [...new Set([...processedIds, submission.submissionId])],
       });
-      status.textContent = "Saved on this browser. Google Sheets sync comes next.";
+      status.textContent = "Saved locally. Syncing to Google Sheets…";
       save.textContent = "Saved";
+      chrome.runtime.sendMessage({ type: "LEETTRACK_SYNC_ALL" }, (response) => {
+        const runtimeError = chrome.runtime.lastError;
+        if (runtimeError) {
+          status.textContent = "Saved locally. Google Sheets sync will retry when you sync manually.";
+          console.warn("[LeetTrack] Could not start Sheets sync:", runtimeError.message);
+          return;
+        }
+        if (response?.ok) {
+          status.textContent = "Saved and synced to Google Sheets.";
+        } else {
+          status.textContent = `Saved locally. Sheets sync failed: ${response?.error ?? "Try again from the extension."}`;
+        }
+      });
       window.setTimeout(closeModal, 1100);
     } catch (error) {
       console.error("[LeetTrack] Failed to save remark locally:", error);
