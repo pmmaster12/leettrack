@@ -14,6 +14,7 @@ interface LocalProblemRecord {
   topics: LeetCodeTopic[];
   originalSolveDate: string;
   remarks: SavedRemark[];
+  sheetName?: string;
 }
 
 const STORAGE_KEY = "leettrack.problemRecords";
@@ -36,6 +37,20 @@ export async function openAcceptedRemarkModal(
 ): Promise<void> {
   document.getElementById(HOST_ID)?.remove();
 
+  const initialStored = await chrome.storage.local.get(["leettrack.problemRecords", "leettrack.settings"]);
+  const initialRecords = (initialStored["leettrack.problemRecords"] ?? {}) as Record<string, LocalProblemRecord>;
+  const existingRecord = initialRecords[submission.problem.problemUrl];
+  const initialSettings = initialStored["leettrack.settings"] as { sheetName?: string } | undefined;
+  const defaultSheetName = initialSettings?.sheetName?.trim() || "LeetTrack";
+  const assignedSheetName = existingRecord?.sheetName?.trim() || (existingRecord ? "LeetTrack" : defaultSheetName);
+  const sheetListResponse = await new Promise<{ ok?: boolean; sheetNames?: string[]; error?: string }>((resolve) => {
+    chrome.runtime.sendMessage({ type: "LEETTRACK_LIST_SHEETS" }, (response) => {
+      const runtimeError = chrome.runtime.lastError;
+      resolve(runtimeError ? { ok: false, error: runtimeError.message } : response);
+    });
+  });
+  const availableSheetNames = sheetListResponse?.ok ? (sheetListResponse.sheetNames ?? []) : [];
+
   const host = createElement("div");
   host.id = HOST_ID;
   const shadow = host.attachShadow({ mode: "open" });
@@ -56,6 +71,8 @@ export async function openAcceptedRemarkModal(
     textarea { width:100%; min-height:132px; resize:vertical; padding:12px; border:1px solid #cbd5e1; border-radius:10px; outline:none; color:#0f172a; font:14px/1.5 inherit; }
     textarea:focus, input:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
     .hint { margin:6px 0 0; color:#94a3b8; font-size:11px; }
+    select { width:100%; padding:10px 11px; border:1px solid #cbd5e1; border-radius:9px; background:#fff; color:#0f172a; font-size:13px; }
+    select:disabled { background:#f8fafc; color:#64748b; }
     .topics { display:flex; flex-wrap:wrap; gap:7px; }
     .topic { display:flex; align-items:center; gap:6px; padding:6px 9px; border:1px solid #c7d2fe; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:12px; }
     .topic button { border:0; padding:0; background:transparent; color:#6366f1; cursor:pointer; font-size:15px; line-height:1; }
@@ -88,6 +105,27 @@ export async function openAcceptedRemarkModal(
   header.append(heading, close);
 
   const success = createElement("div", "success", "✓  Nice work! Capture what you learned while it's fresh.");
+  const sheetLabel = createElement("label", "label", "Save to sheet");
+  const sheetSelect = createElement("select");
+  sheetSelect.setAttribute("aria-label", "Google Sheets tab");
+  const sheetChoices = availableSheetNames.length ? availableSheetNames : [assignedSheetName];
+  sheetChoices.forEach((name) => {
+    const option = createElement("option", undefined, name);
+    option.value = name;
+    sheetSelect.append(option);
+  });
+  sheetSelect.value = sheetChoices.includes(assignedSheetName) ? assignedSheetName : sheetChoices[0];
+  sheetSelect.disabled = Boolean(existingRecord);
+  sheetLabel.htmlFor = "leettrack-sheet";
+  sheetSelect.id = "leettrack-sheet";
+  if (existingRecord) {
+    const assignedHint = createElement("p", "hint", "This problem is already assigned to this sheet. Revisions stay in the same tab.");
+    sheetLabel.append(assignedHint);
+  } else if (!sheetListResponse?.ok) {
+    const sheetError = createElement("p", "hint", sheetListResponse?.error ?? "Could not load sheet tabs. Check your Google Sheets connection.");
+    sheetLabel.append(sheetError);
+  }
+
   const remarkLabel = createElement("label", "label", "Revision remark");
   const textarea = createElement("textarea");
   textarea.placeholder = "What was the key insight? What did you miss? What should you remember next time?";
@@ -208,6 +246,7 @@ export async function openAcceptedRemarkModal(
         title: submission.problem.title,
         difficulty: submission.problem.difficulty,
         topics: [...mergedTopics.values()],
+        sheetName: existing?.sheetName?.trim() || (existing ? "LeetTrack" : sheetSelect.value),
         originalSolveDate: existing?.originalSolveDate ?? now,
         remarks: [
           ...(existing?.remarks ?? []),
@@ -243,7 +282,7 @@ export async function openAcceptedRemarkModal(
   });
 
   actions.append(cancel, save);
-  modal.append(header, success, remarkLabel, textarea, topicsLabel, topicsContainer, addRow, hint, actions, status);
+  modal.append(header, success, sheetLabel, sheetSelect, remarkLabel, textarea, topicsLabel, topicsContainer, addRow, hint, actions, status);
   backdrop.append(modal);
   shadow.append(style, backdrop);
   document.documentElement.append(host);
