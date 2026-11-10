@@ -1,16 +1,32 @@
 /**
  * LeetTrack content-script entry point.
- * This file intentionally has no imports so Vite can emit a self-contained
- * classic content script for Chrome. LeetCode parsing arrives in M2.
+ * LeetCode-specific DOM parsing lives in leetcode-adapter.ts.
  */
 
-const LEETTRACK_MARKER = '[LeetTrack]';
+import { extractLeetCodeProblem } from "./leetcode-adapter";
+
+const LEETTRACK_MARKER = "[LeetTrack]";
+
+function logCurrentProblem(): void {
+  const problem = extractLeetCodeProblem();
+
+  if (!problem) {
+    console.info(`${LEETTRACK_MARKER} Problem metadata is not available yet.`);
+    return;
+  }
+
+  console.info(`${LEETTRACK_MARKER} Problem metadata extracted:`, problem);
+}
 
 console.info(`${LEETTRACK_MARKER} Content script loaded on`, window.location.href);
+logCurrentProblem();
 
-chrome.runtime.sendMessage({ type: 'LEETTRACK_PING' }, (response) => {
+chrome.runtime.sendMessage({ type: "LEETTRACK_PING" }, (response) => {
   if (chrome.runtime.lastError) {
-    console.warn(`${LEETTRACK_MARKER} Background ping failed:`, chrome.runtime.lastError.message);
+    console.warn(
+      `${LEETTRACK_MARKER} Background ping failed:`,
+      chrome.runtime.lastError.message,
+    );
     return;
   }
 
