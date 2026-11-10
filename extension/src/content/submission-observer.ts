@@ -18,7 +18,8 @@ async function getCaptureEnabledAt(): Promise<number> {
   const existing = stored[CAPTURE_ENABLED_AT_KEY];
   if (typeof existing === "number") return existing;
 
-  const initializedAt = Date.now();
+  // Small grace period: the first check can happen just after a fresh submission.
+  const initializedAt = Date.now() - 24 * 60 * 60 * 1000;
   await chrome.storage.local.set({ [CAPTURE_ENABLED_AT_KEY]: initializedAt });
   return initializedAt;
 }
@@ -26,7 +27,7 @@ async function getCaptureEnabledAt(): Promise<number> {
 function extractSubmissionTimestamp(): number | null {
   const pageText = document.body.innerText;
   const match = pageText.match(
-    /submitted at\\s+([A-Za-z]{3,9}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2})/i,
+    /submitted at\s+([A-Za-z]{3,9}\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2})/i,
   );
   if (!match) return null;
 
@@ -110,16 +111,9 @@ export function observeAcceptedSubmissions(
           Promise.resolve(extractSubmissionTimestamp()),
         ]);
 
-        if (submissionTimestamp === null) {
-          console.info(
-            "[LeetTrack] Could not read submission date; use manual capture if needed.",
-          );
-          resultObserver?.disconnect();
-          resultObserver = null;
-          return;
-        }
-
-        if (submissionTimestamp < captureEnabledAt) {
+        // If LeetCode changes its timestamp markup, don't suppress the
+        // main Accepted flow; only skip when we positively identify an old date.
+        if (submissionTimestamp !== null && submissionTimestamp < captureEnabledAt) {
           console.info(
             "[LeetTrack] Historical submission; automatic capture skipped:",
             submissionId,
