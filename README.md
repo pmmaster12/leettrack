@@ -27,7 +27,25 @@ Solved-problem counts don't preserve the reasoning behind a solution. Notes are 
 
 ## Screenshots
 
-*Product screenshots will be added here.*
+### LeetTrack extension popup
+View your Google account connection, configure the destination spreadsheet, and manually sync saved problems.
+
+![LeetTrack extension popup](images/ss1.png)
+
+### Capture a problem and add a revision note
+After an Accepted submission, review the problem details, add a remark, edit topics, and select the spreadsheet tab.
+
+![LeetTrack accepted submission capture dialog](images/ss2.png)
+
+### Revision records in Google Sheets
+Keep problem details, dated remarks, original solve dates, and topics organized in your own spreadsheet.
+
+![LeetTrack Google Sheets integration](images/ss3.png)
+
+### Manual capture on a LeetCode problem
+Capture a problem directly from its LeetCode page without waiting for a new Accepted submission.
+
+![LeetTrack manual capture on LeetCode](images/ss4.png)
 
 ## Tech stack
 
