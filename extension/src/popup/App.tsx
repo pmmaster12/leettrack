@@ -59,7 +59,7 @@ export default function App() {
     chrome.runtime.sendMessage({ type: 'LEETTRACK_SYNC_ALL' }, (response) => {
       const error = chrome.runtime.lastError;
       if (error) {
-        setMessage(error.message);
+        setMessage(error.message ?? 'Could not start Google Sheets sync.');
         return;
       }
       setMessage(response?.ok
