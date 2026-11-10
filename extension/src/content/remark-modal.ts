@@ -191,11 +191,18 @@ export async function openAcceptedRemarkModal(
       const existing = records[key];
       const now = new Date().toISOString();
 
+      // Preserve topics from earlier revisions and add any newly selected
+      // topics. Keying by slug prevents duplicate tags across submissions.
+      const mergedTopics = new Map(
+        (existing?.topics ?? []).map((topic) => [topic.slug, topic]),
+      );
+      topics.forEach((topic) => mergedTopics.set(topic.slug, topic));
+
       records[key] = {
         problemUrl: key,
         title: submission.problem.title,
         difficulty: submission.problem.difficulty,
-        topics,
+        topics: [...mergedTopics.values()],
         originalSolveDate: existing?.originalSolveDate ?? now,
         remarks: [
           ...(existing?.remarks ?? []),
