@@ -163,7 +163,7 @@ export async function openAcceptedRemarkModal(
   backdrop.addEventListener("click", (event) => {
     if (event.target === backdrop) closeModal();
   });
-  shadow.addEventListener("keydown", (event) => {
+  shadow.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key === "Escape") closeModal();
   });
 
