@@ -4,6 +4,7 @@
  */
 
 import { extractLeetCodeProblem } from "./leetcode-adapter";
+import { observeAcceptedSubmissions } from "./submission-observer";
 
 const LEETTRACK_MARKER = "[LeetTrack]";
 
@@ -20,6 +21,13 @@ function logCurrentProblem(): void {
 
 console.info(`${LEETTRACK_MARKER} Content script loaded on`, window.location.href);
 logCurrentProblem();
+
+const stopObservingSubmissions = observeAcceptedSubmissions((submission) => {
+  console.info(`${LEETTRACK_MARKER} Newly accepted submission detected:`, submission);
+});
+
+// Keep the observer lifecycle explicit for future SPA/navigation cleanup.
+window.addEventListener("pagehide", stopObservingSubmissions, { once: true });
 
 chrome.runtime.sendMessage({ type: "LEETTRACK_PING" }, (response) => {
   if (chrome.runtime.lastError) {
