@@ -65,4 +65,5 @@ For prerequisites, Google Cloud/OAuth configuration, build commands, installatio
 
 ## License
 
-No license has been added. All rights are reserved by the repository owner; do not assume the code is available for reuse under an open-source license.
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
