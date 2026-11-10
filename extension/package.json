@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --watch",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run build:dev",
+    "build:dev": "tsc --noEmit && vite build && node scripts/set-oauth-client.mjs development",
+    "build:prod": "tsc --noEmit && vite build && node scripts/set-oauth-client.mjs production",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
