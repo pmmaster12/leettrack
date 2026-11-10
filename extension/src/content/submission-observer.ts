@@ -18,6 +18,7 @@ export function observeAcceptedSubmissions(
   onAccepted: (submission: AcceptedSubmission) => void,
 ): () => void {
   let lastUrl = window.location.href;
+  let lastKnownResultNode = document.querySelector(RESULT_SELECTOR);
   let activeSubmissionId: string | null = null;
   let resultObserver: MutationObserver | null = null;
   const reportedSubmissionIds = new Set<string>();
@@ -42,8 +43,9 @@ export function observeAcceptedSubmissions(
     activeSubmissionId = submissionId;
     resultObserver?.disconnect();
 
-    // Do not mistake a result panel from the previous submission for this one.
-    const previousResultNode = document.querySelector(RESULT_SELECTOR);
+    // Compare against the result node observed before navigation. The new
+    // panel may already be rendered by the time our URL poll notices navigation.
+    const previousResultNode = lastKnownResultNode;
 
     const checkResult = (): void => {
       const result = document.querySelector<HTMLElement>(RESULT_SELECTOR);
@@ -82,11 +84,13 @@ export function observeAcceptedSubmissions(
   const pollForNavigation = (): void => {
     const currentUrl = window.location.href;
     if (currentUrl === lastUrl) {
+      lastKnownResultNode = document.querySelector(RESULT_SELECTOR);
       return;
     }
 
     lastUrl = currentUrl;
     inspectCurrentSubmission();
+    lastKnownResultNode = document.querySelector(RESULT_SELECTOR);
   };
 
   const intervalId = window.setInterval(pollForNavigation, 400);
